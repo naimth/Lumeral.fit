@@ -5464,80 +5464,106 @@ function mirrorTextureSettings(dst, baseMap){
   }
 
   async function toEntryWithSeq(file, seq){
-	  console.log(`[deck] === Loading image ${seq}: ${file.name} ===`);
-	  
-	  // 1. Wait for THREE
-	  let THREE;
+	console.log(`[deck] === Loading image ${seq}: ${file.name} ===`);
+	
+	// CRITICAL: Wait for THREE.js to be available
+	let THREE;
+	try {
+	  console.log(`[deck] Waiting for THREE.js...`);
+	  THREE = await waitForTHREE();
+	  console.log(`[deck] THREE.js is available:`, !!THREE);
+	  console.log(`[deck] THREE.REVISION:`, THREE?.REVISION);
+	  console.log(`[deck] THREE.CanvasTexture exists:`, !!THREE?.CanvasTexture);
+	} catch(e) {
+	  console.error(`[deck] CRITICAL: THREE.js not available after waiting:`, e);
+	  return { texture: null, aspect: 1, width: 0, height: 0, seq, file };
+	}
+	
+	console.log(`[deck] Using manual texture creation for ${file.name}`);
+	
+	// Load image data
+	let bmp;
+	try {
+	  console.log(`[deck] Creating ImageBitmap...`);
+	  // Try modern high-performance loader first
+	  if ('createImageBitmap' in window) {
+		 bmp = await createImageBitmap(file);
+	  } else {
+		 throw new Error('createImageBitmap not supported');
+	  }
+	} catch(e) {
+	  console.warn(`[deck] createImageBitmap failed, falling back to standard Image loader:`, e);
+	  // Fallback: Standard HTML Image tag (works 100% of the time)
 	  try {
-		THREE = await waitForTHREE();
-	  } catch(e) {
-		console.error(`[deck] THREE.js not available:`, e);
+		bmp = await new Promise((res, rej) => {
+		  const img = new Image();
+		  img.onload = () => res(img);
+		  img.onerror = (err) => rej(err);
+		  // Force crossOrigin to anonymous to handle some server security headers
+		  img.crossOrigin = 'anonymous'; 
+		  img.src = URL.createObjectURL(file);
+		});
+	  } catch (errFallback) {
+		console.error(`[deck] All image loading methods failed for ${file.name}:`, errFallback);
 		return { texture: null, aspect: 1, width: 0, height: 0, seq, file };
 	  }
+	}
+	
+	const width = bmp.width, height = bmp.height;
+	const aspect = width/height;
+	console.log(`[deck] Image ${seq} dimensions: ${width}x${height}, aspect: ${aspect.toFixed(2)}`);
+	
+	// Use fixed max size - NO dependency on any other texture
+	const targetMax = 4096;
+	const scale = Math.min(1, targetMax / Math.max(width, height));
+	
+	// Create UNIQUE canvas for this texture
+	console.log(`[deck] Creating canvas...`);
+	const c = document.createElement('canvas');
+	c.width = (scale >= 1) ? width : Math.round(width * scale);
+	c.height = (scale >= 1) ? height : Math.round(height * scale);
+	c.id = `deck-canvas-${seq}-${Date.now()}`; // Unique ID for debugging
+	console.log(`[deck] Canvas created: ${c.id}, ${c.width}x${c.height}`);
+	
+	const ctx = c.getContext('2d', {alpha:false});
+	if (!ctx) {
+	  console.error(`[deck] Failed to get 2d context!`);
+	  return { texture: null, aspect, width, height, seq, file };
+	}
+	
+	try { 
+	  ctx.imageSmoothingEnabled = true; 
+	  ctx.imageSmoothingQuality = 'high'; 
+	} catch(_){}
+	
+	console.log(`[deck] Drawing to canvas...`);
+	ctx.drawImage(bmp, 0, 0, c.width, c.height);
+	console.log(`[deck] Image drawn to canvas`);
+	
+	// Dispose ImageBitmap
+	if (typeof bmp.close === 'function') {
+	  try { bmp.close(); } catch(_){}
+	}
+	
+	// Create INDEPENDENT texture - NO baseMap reference at all
+	let tex = null;
+	try {
+	  console.log(`[deck] Creating THREE.CanvasTexture...`);
+	  console.log(`[deck] THREE available:`, !!THREE);
+	  console.log(`[deck] THREE.CanvasTexture:`, THREE.CanvasTexture);
 	  
-	  // 2. Load Image Data (Universal Method)
-	  let bmp;
-	  let isBitmap = false;
+	  // Create texture directly from canvas - this is our OWN texture
+	  tex = new THREE.CanvasTexture(c);
+	  console.log(`[deck] Texture created:`, !!tex);
+	  console.log(`[deck] Texture type:`, tex?.constructor?.name);
 	  
-	  try {
-		// ATTEMPT A: Modern High-Performance Loader (Chrome/Firefox)
-		// We explicitly skip this on Safari if needed, but the try/catch usually handles it.
-		if ('createImageBitmap' in window) {
-		  bmp = await createImageBitmap(file);
-		  isBitmap = true;
-		} else {
-		  throw new Error('createImageBitmap not supported');
-		}
-	  } catch(e) {
-		console.warn(`[deck] Fast loader failed, switching to compatibility mode...`);
-		
-		// ATTEMPT B: Compatibility Loader (Safari / Strict Server / Nova)
-		try {
-		  bmp = await new Promise((res, rej)=>{
-			const img = new Image();
-			img.onload = () => res(img);
-			img.onerror = rej;
-			// 'anonymous' helps with WebGL texture security on some servers
-			img.crossOrigin = 'anonymous'; 
-			img.src = URL.createObjectURL(file);
-		  });
-		  isBitmap = false;
-		} catch (errFallback) {
-		   console.error(`[deck] All loaders failed for ${file.name}`, errFallback);
-		   return { texture: null, aspect: 1, width: 0, height: 0, seq, file };
-		}
+	  if (!tex) {
+		console.error(`[deck] Texture is null after creation!`);
+		return { texture: null, aspect, width, height, seq, file };
 	  }
 	  
-	  const width = bmp.width;
-	  const height = bmp.height;
-	  const aspect = width/height;
-	  
-	  // 3. Create Texture
-	  // Calculate scale to keep texture within GPU limits
-	  const targetMax = 4096;
-	  const scale = Math.min(1, targetMax / Math.max(width, height));
-	  
-	  const c = document.createElement('canvas');
-	  c.width = (scale >= 1) ? width : Math.round(width * scale);
-	  c.height = (scale >= 1) ? height : Math.round(height * scale);
-	  
-	  const ctx = c.getContext('2d', {alpha:false});
-	  if (!ctx) return { texture: null, aspect, width, height, seq, file };
-	  
-	  try { 
-		ctx.imageSmoothingEnabled = true; 
-		ctx.imageSmoothingQuality = 'high'; 
-	  } catch(_){}
-	  
-	  ctx.drawImage(bmp, 0, 0, c.width, c.height);
-	  
-	  // Cleanup memory if we used the bitmap method
-	  if (isBitmap && typeof bmp.close === 'function') {
-		try { bmp.close(); } catch(_){}
-	  }
-	  
-	  // Create THREE Texture
-	  let tex = new THREE.CanvasTexture(c);
+	  // Set ALL properties explicitly - NO inheritance
+	  console.log(`[deck] Setting texture properties...`);
 	  tex.colorSpace = THREE.SRGBColorSpace;
 	  tex.flipY = false;
 	  tex.wrapS = THREE.ClampToEdgeWrapping;
@@ -5546,15 +5572,51 @@ function mirrorTextureSettings(dst, baseMap){
 	  tex.magFilter = THREE.LinearFilter;
 	  tex.generateMipmaps = true;
 	  
-	  // Anisotropy for sharpness at angles
+	  // Get anisotropy
 	  const renderer = gt.renderer || (typeof window !== 'undefined' && window.renderer);
-	  const aniso = renderer?.capabilities?.getMaxAnisotropy?.() || 4;
+	  const aniso = renderer?.capabilities?.getMaxAnisotropy?.() || 
+	                renderer?.capabilities?.maxAnisotropy || 4;
 	  tex.anisotropy = Math.min(aniso, 16);
+	  
 	  tex.needsUpdate = true;
-	  tex.name = `deck-texture-${seq}-${file.name}`;
-  
-	  return { texture: tex, aspect, width, height, seq, file };
+	  
+	  // Generate unique ID for this texture
+	  tex.name = `deck-texture-${seq}-${file.name}-${Date.now()}`;
+	  
+	  console.log(`[deck] ✓ Created INDEPENDENT texture #${seq}`);
+	  console.log(`[deck]   Name: ${tex.name}`);
+	  console.log(`[deck]   UUID: ${tex.uuid}`);
+	  console.log(`[deck]   Canvas: ${c.id}`);
+	  console.log(`[deck]   Image: ${tex.image?.id || 'no id'}`);
+	  
+	  // Verify texture has a UUID
+	  if (!tex.uuid) {
+		console.error(`[deck] WARNING: Texture has no UUID! This is abnormal.`);
+	  }
+	  
+	} catch(e) {
+	  console.error(`[deck] CRITICAL: Texture creation failed for ${file.name}:`, e);
+	  console.error(`[deck] Error stack:`, e.stack);
+	  return { texture: null, aspect, width, height, seq, file };
 	}
+	
+	// Store canvas reference in texture for debugging
+	tex.userData = tex.userData || {};
+	tex.userData.sourceCanvas = c;
+	tex.userData.sourceFile = file.name;
+	tex.userData.deckIndex = seq;
+	
+	console.log(`[deck] === Completed loading image ${seq} ===`);
+	
+	return { 
+	  texture: tex, 
+	  aspect, 
+	  width,
+	  height,
+	  seq, 
+	  file 
+	};
+  }
 
   // 3) Shader-mix pipeline: blend nextMap into diffuseColor after map_fragment
   function ensureMixPipeline(material){

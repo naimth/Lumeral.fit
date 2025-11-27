@@ -1,3 +1,5 @@
 {
-  "workspace.preview_root" : "."
+  "workspace.preview_append_paths" : false,
+  "workspace.preview_root" : ".",
+  "workspace.preview_url" : "http:\/\/lumeral.fit"
 }
