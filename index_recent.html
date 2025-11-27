@@ -3908,9 +3908,8 @@ canvas.addEventListener('pointerdown', (e)=>{
 	  const dy = e.clientY - startY;
 	  applyOrbitFromStart(dx, dy);
 
-	// If we are in latched mode OR zoom is running, continuously update the reference point
-	// This prevents hyper-magnified movements when orbiting during zoom inertia
-	if (window.__orbitLatched || __wheelZoomRAF) {
+	// If we are in latched mode, we must continuously update the reference point
+	if (window.__orbitLatched) {
 		startX = e.clientX;
 		startY = e.clientY;
 		startVec.copy(camera.position).sub(focus);

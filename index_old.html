@@ -2258,7 +2258,7 @@ function __wheelZoomStep(t){
 		camera.position.addScaledVector(viewVector, moveDist);
 		// ✅ keep sticky-orbit’s baseline in sync with the new radius
 		// AFTER (safe)
-		if (window.__orbitLatched || orbitRotating) { try { startVec.copy(camera.position).sub(focus); } catch(_) {} }
+		if (window.__orbitLatched) { try { startVec.copy(camera.position).sub(focus); } catch(_) {} }
 
 	}
 
@@ -2266,10 +2266,10 @@ function __wheelZoomStep(t){
 
 	if (Math.abs(__wheelZoomVel) < 0.01){
 		// Cleanup
-		if (window.__orbitLatched || orbitRotating) {
-		  // Orbit is active: prime the next orbit move with a fresh baseline, don't do full cleanup
+		if (window.__orbitLatched) {
+		  // We stayed latched: prime the next orbit move with a fresh baseline
 		  try { startVec.copy(camera.position).sub(focus); } catch (_) {}
-		  // Keep controls disabled during manual rotation
+		  // Keep controls disabled during sticky manual rotation
 		  try { if (controls) controls.enabled = false; } catch (_) {}
 		} else if (wasOnPivot) {
 		  _endAndCleanupOrbit();
@@ -3577,23 +3577,6 @@ window.addEventListener('keydown', ()=>{ try{ __cancelInertia(); }catch(_){ } },
   // Baseline refresh used by sticky-orbit + zoom
   function refreshRotateBaseline(x, y) {
 	try {
-	  // If zoom animation is still running, don't do full cleanup
-	  // Just set up orbit from current world position - they can coexist
-	  if (__wheelZoomRAF) {
-		// Ensure camera is in world space (zoom already does this)
-		if (camera.parent !== scene) {
-		  scene.attach(camera);
-		}
-		// Set up orbit baseline from current position
-		if (controls) controls.enabled = false;
-		startX = x; startY = y;
-		orbitRotating = true;
-		cylRotating = false;
-		startVec.copy(camera.position).sub(focus);
-		return;
-	  }
-	  
-	  // Normal case: no zoom active, do full cleanup
 	  _endAndCleanupOrbit();               // ensure world-space camera
 	  if (controls) controls.enabled = false;
 	  startX = x; startY = y;              // new drag anchor
@@ -3908,9 +3891,8 @@ canvas.addEventListener('pointerdown', (e)=>{
 	  const dy = e.clientY - startY;
 	  applyOrbitFromStart(dx, dy);
 
-	// If we are in latched mode OR zoom is running, continuously update the reference point
-	// This prevents hyper-magnified movements when orbiting during zoom inertia
-	if (window.__orbitLatched || __wheelZoomRAF) {
+	// If we are in latched mode, we must continuously update the reference point
+	if (window.__orbitLatched) {
 		startX = e.clientX;
 		startY = e.clientY;
 		startVec.copy(camera.position).sub(focus);
