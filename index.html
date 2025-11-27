@@ -790,7 +790,7 @@ camera.position.set(0,0,8); // Start twice as far away
 	  controls.zoomSpeed = 1.0;
 	  controls.target = new THREE.Vector3(0,0,0);
 	  controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: null };
-	  controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+	  controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN };
 	  controls.target.copy(focus);
 	  controls.update();
 	  setDiag('dControls', !!controls && typeof controls.update==='function', 'OrbitControls');
@@ -1945,7 +1945,7 @@ try { window.createOrUpdatePhotoMesh = createOrUpdatePhotoMesh; } catch(_){}
 	  const isCyl = (cylMode && cylMode.checked);
 	  if (controls){
 	controls.enableRotate = !isCyl;
-	controls.enableZoom   = !isCyl;
+	controls.enableZoom   = true; // Always allow zoom for touch pinch
 	controls.enablePan    = true;
 	  }
 	}
@@ -3498,6 +3498,7 @@ function __startOrbitInertia() {
 
 // Feed velocity from pointer move deltas (capture)
 canvas.addEventListener('pointermove', (e)=>{
+  if (e.pointerType === 'touch') return; // Let OrbitControls handle touch
   const now=performance.now();
   const dx = (e.movementX!==undefined? e.movementX : 0);
   const dy = (e.movementY!==undefined? e.movementY : 0);
@@ -3505,7 +3506,7 @@ canvas.addEventListener('pointermove', (e)=>{
   __lastMoveT = now;
 }, true);
 // Cancel on new input
-canvas.addEventListener('pointerdown', ()=>{ try{ __cancelInertia(); }catch(_){ } }, true);
+canvas.addEventListener('pointerdown', (e)=>{ if (e.pointerType === 'touch') return; try{ __cancelInertia(); }catch(_){ } }, true);
 window.addEventListener('keydown', ()=>{ try{ __cancelInertia(); }catch(_){ } }, true);
 // ===== Enhanced interactions: Alt(Option)-pan override, A/Z continuous zoom, sticky left-click orbit (v13) =====
 (function(){
@@ -3880,6 +3881,7 @@ canvas.addEventListener('pointerdown', (e)=>{
   }, true);
 
   function onPointerMove(e){
+	if (e.pointerType === 'touch') return; // Let OrbitControls handle touch
 	lastX = e.clientX; lastY = e.clientY;
 
 	// PATCH: Handle drag detection
@@ -4675,10 +4677,12 @@ return;
     const el=getCanvas(); if(!el) return;
     el.addEventListener('contextmenu', e=>{ e.preventDefault(); }, {passive:false});
     el.addEventListener('pointerdown', e=>{
+      if(e.pointerType === 'touch') return; // Let OrbitControls handle touch
       if(e.button===2){ rebuildPlaneInfo(); planePanActive=true; beginPlanePan(e.clientX,e.clientY); el.setPointerCapture(e.pointerId);
         e.preventDefault(); e.stopPropagation(); if(e.stopImmediatePropagation) e.stopImmediatePropagation(); }
     }, {capture:true, passive:false});
     el.addEventListener('pointermove', e=>{
+      if(e.pointerType === 'touch') return; // Let OrbitControls handle touch
       if(!planePanActive) return; movePlanePan(e.clientX,e.clientY);
       e.preventDefault(); e.stopPropagation(); if(e.stopImmediatePropagation) e.stopImmediatePropagation();
     }, {capture:true, passive:false});
@@ -4986,6 +4990,7 @@ return;
 
   // ===== Gesture =====
   function onDownCapture(e){
+	if (e.pointerType === 'touch') return; // Let OrbitControls handle touch
 	if (e.button !== 2) return;
 	if (!hasThree() || !cam()) return;
 	var cv = pickCanvasFromEvent(e); if (!cv) return; canvasRef = cv;
