@@ -785,7 +785,7 @@ camera.position.set(0,0,8); // Start twice as far away
 	  controls.enablePan = true; controls.enableZoom = true; controls.enableRotate = false;
 	  controls.target = new THREE.Vector3(0,0,0);
 	  controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: null };
-	  controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.PAN };
+	  controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN };
 	  controls.target.copy(focus);
 	  controls.update();
 	  setDiag('dControls', !!controls && typeof controls.update==='function', 'OrbitControls');
