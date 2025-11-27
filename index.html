@@ -781,11 +781,16 @@ camera.position.set(0,0,8); // Start twice as far away
 	  camera.up.set(0,1,0);
 	//  camera.lookAt(0,0,0); // Ensure looking straight at origin
 	  controls = new OrbitControls(camera, canvas);
-	  controls.enableDamping = false; controls.dampingFactor = 0;
-	  controls.enablePan = true; controls.enableZoom = true; controls.enableRotate = false;
+	  controls.enableDamping = true;
+	  controls.dampingFactor = 0.05;
+	  controls.enablePan = true; controls.enableZoom = true; controls.enableRotate = true;
+	  controls.screenSpacePanning = true;
+	  controls.rotateSpeed = 0.5;
+	  controls.panSpeed = 1.0;
+	  controls.zoomSpeed = 1.0;
 	  controls.target = new THREE.Vector3(0,0,0);
-	  controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: null };
-	  controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN };
+	  controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: null };
+	  controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
 	  controls.target.copy(focus);
 	  controls.update();
 	  setDiag('dControls', !!controls && typeof controls.update==='function', 'OrbitControls');
@@ -2404,8 +2409,8 @@ canvas.addEventListener('wheel', (e)=>{
 	} }
 	if (controls && controls.enabled && !panActive) {
 	  const t = safeTarget(); if (t) t.copy(focus);
-	  controls.update();
 	}
+	if (controls) controls.update(); // Always update for damping
 	  if(pivot && !panActive){ pivot.position.copy(focus); }
 	  
 	if(playing){
