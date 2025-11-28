@@ -193,7 +193,6 @@
 	  transform: scale(0.95);
 	  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
 	  user-select: none;
-	  touch-action: none; /* Prevent pinch-zoom crash on mobile */
 	}
 
 	#lightbox.active img {
@@ -203,11 +202,25 @@
 	/* --- UI Controls --- */
 	#menu {
 	  position: fixed;
-	  bottom: env(safe-area-inset-bottom, 0px);
+	  bottom: calc(30px + env(safe-area-inset-bottom, 0px));
 	  width: 100%;
 	  text-align: center;
 	  z-index: 100;
 	  pointer-events: none;
+	}
+	
+	/* Extra padding for mobile browsers with bottom UI chrome */
+	@media screen and (max-width: 768px) {
+	  #menu {
+	    bottom: calc(50px + env(safe-area-inset-bottom, 0px));
+	  }
+	}
+	
+	@supports (-webkit-touch-callout: none) {
+	  /* iOS-specific: extra room for Safari/Chrome toolbar */
+	  #menu {
+	    bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+	  }
 	}
 
 	.button-group {
@@ -700,18 +713,6 @@
 	  
 	  // Lightbox listeners
 	  document.getElementById('lightbox').addEventListener('click', closeLightbox);
-	  // Prevent ALL zoom gestures on lightbox
-	  const lb = document.getElementById('lightbox');
-	  lb.addEventListener('touchstart', (e) => {
-	    if (e.touches.length > 1) e.preventDefault();
-	  }, { passive: false });
-	  lb.addEventListener('touchmove', (e) => {
-	    e.preventDefault();
-	  }, { passive: false });
-	  // Safari-specific gesture events
-	  lb.addEventListener('gesturestart', (e) => e.preventDefault());
-	  lb.addEventListener('gesturechange', (e) => e.preventDefault());
-	  lb.addEventListener('gestureend', (e) => e.preventDefault());
 	  
 	  // Global pointerup handler to detect clicks on cards
 	  // This works around TrackballControls capturing pointer events
