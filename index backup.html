@@ -37,7 +37,7 @@
 	  <link rel="manifest" href="/site.webmanifest" />
 	  
 	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>Lumeral Fitness Photography</title>
   
   
@@ -201,7 +201,7 @@
 	/* --- UI Controls --- */
 	#menu {
 	  position: absolute;
-	  bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+	  bottom: 30px;
 	  width: 100%;
 	  text-align: center;
 	  z-index: 100;
@@ -553,8 +553,7 @@
 
 		const img = document.createElement('img');
 		img.className = 'card-image';
-		// Stagger image loading to avoid rate limiting (fix CloudFlare 468)
-		setTimeout(() => { img.src = urls.thumbnail; }, i * 50);
+		img.src = urls.thumbnail;
 		img.loading = "lazy"; 
 		element.appendChild(img);
 
@@ -670,23 +669,7 @@
 	  controls.zoomSpeed = 1.2;
 	  // controls.panSpeed = 0.8;
 	  controls.staticMoving = false; 
-	  controls.dynamicDampingFactor = 0.05; // Lower = more floaty (was 0.08)
-  
-  // Limit zoom speed to prevent mobile memory crash
-  let lastCameraZ = camera.position.length();
-  const maxZoomDelta = 150; // Max distance change per frame
-  const originalUpdate = controls.update.bind(controls);
-  controls.update = function() {
-    originalUpdate();
-    const currentZ = camera.position.length();
-    const delta = currentZ - lastCameraZ;
-    if (Math.abs(delta) > maxZoomDelta) {
-      const clampedDelta = Math.sign(delta) * maxZoomDelta;
-      const scale = (lastCameraZ + clampedDelta) / currentZ;
-      camera.position.multiplyScalar(scale);
-    }
-    lastCameraZ = camera.position.length();
-  }; 
+	  controls.dynamicDampingFactor = 0.05; // Lower = more floaty (was 0.08) 
 
 	  // Capture-phase listener to skip controls update on click (prevents burst)
 	  document.addEventListener('pointerdown', () => {
