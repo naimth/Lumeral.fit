@@ -176,7 +176,6 @@
 	  opacity: 0;
 	  pointer-events: none;
 	  transition: opacity 0.3s ease;
-	  touch-action: none; /* Prevent pinch-zoom crash on mobile */
 	}
 
 	#lightbox.active {
@@ -201,26 +200,12 @@
 
 	/* --- UI Controls --- */
 	#menu {
-	  position: fixed;
+	  position: absolute;
 	  bottom: calc(30px + env(safe-area-inset-bottom, 0px));
 	  width: 100%;
 	  text-align: center;
 	  z-index: 100;
 	  pointer-events: none;
-	}
-	
-	/* Extra padding for mobile browsers with bottom UI chrome */
-	@media screen and (max-width: 768px) {
-	  #menu {
-	    bottom: calc(50px + env(safe-area-inset-bottom, 0px));
-	  }
-	}
-	
-	@supports (-webkit-touch-callout: none) {
-	  /* iOS-specific: extra room for Safari/Chrome toolbar */
-	  #menu {
-	    bottom: calc(70px + env(safe-area-inset-bottom, 0px));
-	  }
 	}
 
 	.button-group {
@@ -568,7 +553,8 @@
 
 		const img = document.createElement('img');
 		img.className = 'card-image';
-		img.src = urls.thumbnail;
+		// Stagger image loading to avoid rate limiting (fix CloudFlare 468)
+		setTimeout(() => { img.src = urls.thumbnail; }, i * 50);
 		img.loading = "lazy"; 
 		element.appendChild(img);
 
@@ -684,7 +670,23 @@
 	  controls.zoomSpeed = 1.2;
 	  // controls.panSpeed = 0.8;
 	  controls.staticMoving = false; 
-	  controls.dynamicDampingFactor = 0.05; // Lower = more floaty (was 0.08) 
+	  controls.dynamicDampingFactor = 0.05; // Lower = more floaty (was 0.08)
+  
+  // Limit zoom speed to prevent mobile memory crash
+  let lastCameraZ = camera.position.length();
+  const maxZoomDelta = 150; // Max distance change per frame
+  const originalUpdate = controls.update.bind(controls);
+  controls.update = function() {
+    originalUpdate();
+    const currentZ = camera.position.length();
+    const delta = currentZ - lastCameraZ;
+    if (Math.abs(delta) > maxZoomDelta) {
+      const clampedDelta = Math.sign(delta) * maxZoomDelta;
+      const scale = (lastCameraZ + clampedDelta) / currentZ;
+      camera.position.multiplyScalar(scale);
+    }
+    lastCameraZ = camera.position.length();
+  }; 
 
 	  // Capture-phase listener to skip controls update on click (prevents burst)
 	  document.addEventListener('pointerdown', () => {
@@ -819,13 +821,6 @@
 		  skipNextControlsUpdate = false;
 		} else {
 		  controls.update();
-		}
-		
-		// Hard clamp camera distance to prevent mobile memory crash on fast zoom
-		const dist = camera.position.length();
-		const minDist = 1800;
-		if (dist < minDist) {
-		  camera.position.multiplyScalar(minDist / dist);
 		}
 	  }
 	  
