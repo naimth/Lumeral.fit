@@ -657,17 +657,26 @@
 	  }
 
 	  // 4. GRID
-	  {
-		for (let i = 0; i < objects.length; i++) {
-		  const object = new THREE.Object3D();
-		  const width = 240;
-		  const height = 290;
-		  object.position.x = ((i % 5) * width) - 500;
-		  object.position.y = (-(Math.floor(i / 5) % 5) * height) + 500;
-		  object.position.z = (Math.floor(i / 25)) * 1000 - 2000;
-		  targets.grid.push(object);
+		{
+		  for (let i = 0; i < objects.length; i++) {
+			const object = new THREE.Object3D();
+			const width = 240;
+			const height = 290;
+			
+			// 1. Columns: Change % 5 to % 6
+			// Offset changed from -500 to -600 to center the wider grid
+			object.position.x = ((i % 6) * width) - 600;
+	  
+			// 2. Rows: Change / 5 to / 6 AND % 5 to % 6
+			// Offset changed from +500 to +725 to center the taller grid
+			object.position.y = (-(Math.floor(i / 6) % 6) * height) + 725;
+	  
+			// 3. Depth: Change / 25 to / 36 (Because 6 * 6 = 36)
+			object.position.z = (Math.floor(i / 36)) * 1000 - 2000;
+			
+			targets.grid.push(object);
+		  }
 		}
-	  }
 
 	  // --- RENDERER ---
 	  renderer = new THREE.CSS3DRenderer();
