@@ -37,7 +37,7 @@
 	  <link rel="manifest" href="/site.webmanifest" />
 	  
 	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 	<title>Lumeral Fitness Photography</title>
   
   
@@ -59,7 +59,7 @@
 	  user-select: none;
 	}
 
-	body {
+	html, body {
 	  font-family: sans-serif;
 	  background-color: var(--bg-dark);
 	  color: #fff;
@@ -67,6 +67,13 @@
 	  height: 100vh;
 	  width: 100vw;
 	  position: relative;
+	  touch-action: none;       /* crucial for chrome/android */
+	  overscroll-behavior: none; /* prevents rubber-banding on mac/ios */
+	}
+	
+	/* Block system zoom on all elements */
+	* {
+	  touch-action: none;
 	}
 
 	/* Starfield Canvas */
@@ -103,6 +110,7 @@
 	  width: 100%;
 	  height: 100%;
 	  z-index: 1;
+	  touch-action: none; /* Let Three.js handle all touch, block system zoom */
 	}
 
 	/* --- The 3D Card --- */
@@ -176,6 +184,7 @@
 	  opacity: 0;
 	  pointer-events: none;
 	  transition: opacity 0.3s ease;
+	  touch-action: none; /* Prevent pinch-zoom crash on mobile */
 	}
 
 	#lightbox.active {
@@ -192,6 +201,7 @@
 	  transform: scale(0.95);
 	  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
 	  user-select: none;
+	  touch-action: none; /* Prevent pinch-zoom crash on mobile */
 	}
 
 	#lightbox.active img {
@@ -200,8 +210,8 @@
 
 	/* --- UI Controls --- */
 	#menu {
-	  position: absolute;
-	  bottom: 30px;
+	  position: fixed;
+	  bottom: 0;
 	  width: 100%;
 	  text-align: center;
 	  z-index: 100;
@@ -489,6 +499,10 @@
 		'photo-00102.jpg',
 		'photo-00103.jpg',
 		'photo-00104.jpg',
+		'photo-00105.jpg',
+		'photo-00106.jpg',
+		'photo-00107.jpg',
+		'photo-00108.jpg',
 	  
 	  // Add more filenames here...
 	];
@@ -698,6 +712,18 @@
 	  
 	  // Lightbox listeners
 	  document.getElementById('lightbox').addEventListener('click', closeLightbox);
+	  // Prevent ALL zoom gestures on lightbox
+	  const lb = document.getElementById('lightbox');
+	  lb.addEventListener('touchstart', (e) => {
+	    if (e.touches.length > 1) e.preventDefault();
+	  }, { passive: false });
+	  lb.addEventListener('touchmove', (e) => {
+	    e.preventDefault();
+	  }, { passive: false });
+	  // Safari-specific gesture events
+	  lb.addEventListener('gesturestart', (e) => e.preventDefault());
+	  lb.addEventListener('gesturechange', (e) => e.preventDefault());
+	  lb.addEventListener('gestureend', (e) => e.preventDefault());
 	  
 	  // Global pointerup handler to detect clicks on cards
 	  // This works around TrackballControls capturing pointer events
@@ -716,6 +742,21 @@
 	      window._cardClickStart = null;
 	    }
 	  });
+	  
+	  // --- FIX FOR MOBILE CRASHES ---
+		// 1. Disable native Safari page zoom (pinch) everywhere.
+		// This allows TrackballControls to handle the pinch math without the browser interfering.
+		document.addEventListener('gesturestart', (e) => e.preventDefault());
+		document.addEventListener('gesturechange', (e) => e.preventDefault());
+		document.addEventListener('gestureend', (e) => e.preventDefault());
+		
+		// 2. Disable native browser zoom on Chrome/Android (passive: false is required)
+		window.addEventListener('touchmove', (e) => {
+		  // If two fingers are used, prevent native zoom so Three.js handles it
+		  if (e.touches.length > 1) {
+			e.preventDefault();
+		  }
+		}, { passive: false });
 	}
 
 	// --- LIGHTBOX FUNCTIONS ---
@@ -804,6 +845,13 @@
 		  skipNextControlsUpdate = false;
 		} else {
 		  controls.update();
+		}
+		
+		// Hard clamp camera distance to prevent mobile memory crash on fast zoom
+		const dist = camera.position.length();
+		const minDist = 1800;
+		if (dist < minDist) {
+		  camera.position.multiplyScalar(minDist / dist);
 		}
 	  }
 	  
