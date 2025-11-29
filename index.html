@@ -59,7 +59,7 @@
 	  user-select: none;
 	}
 
-	body {
+	html, body {
 	  font-family: sans-serif;
 	  background-color: var(--bg-dark);
 	  color: #fff;
@@ -67,7 +67,8 @@
 	  height: 100vh;
 	  width: 100vw;
 	  position: relative;
-	  touch-action: none; /* Block all system gestures */
+	  touch-action: none;       /* crucial for chrome/android */
+	  overscroll-behavior: none; /* prevents rubber-banding on mac/ios */
 	}
 	
 	/* Block system zoom on all elements */
@@ -738,24 +739,20 @@
 	    }
 	  });
 	  
-	  // Prevent system-level pinch zoom EXCEPT in Three.js container (Safari gesture events)
-	  document.addEventListener('gesturestart', (e) => {
-	    if (!container.contains(e.target)) e.preventDefault();
-	  });
-	  document.addEventListener('gesturechange', (e) => {
-	    if (!container.contains(e.target)) e.preventDefault();
-	  });
-	  document.addEventListener('gestureend', (e) => {
-	    if (!container.contains(e.target)) e.preventDefault();
-	  });
-	  
-	  // Block multi-touch EXCEPT in the Three.js container
-	  document.addEventListener('touchstart', (e) => {
-	    if (e.touches.length > 1 && !container.contains(e.target)) e.preventDefault();
-	  }, { passive: false });
-	  document.addEventListener('touchmove', (e) => {
-	    if (e.touches.length > 1 && !container.contains(e.target)) e.preventDefault();
-	  }, { passive: false });
+	  // --- FIX FOR MOBILE CRASHES ---
+		// 1. Disable native Safari page zoom (pinch) everywhere.
+		// This allows TrackballControls to handle the pinch math without the browser interfering.
+		document.addEventListener('gesturestart', (e) => e.preventDefault());
+		document.addEventListener('gesturechange', (e) => e.preventDefault());
+		document.addEventListener('gestureend', (e) => e.preventDefault());
+		
+		// 2. Disable native browser zoom on Chrome/Android (passive: false is required)
+		window.addEventListener('touchmove', (e) => {
+		  // If two fingers are used, prevent native zoom so Three.js handles it
+		  if (e.touches.length > 1) {
+			e.preventDefault();
+		  }
+		}, { passive: false });
 	}
 
 	// --- LIGHTBOX FUNCTIONS ---
