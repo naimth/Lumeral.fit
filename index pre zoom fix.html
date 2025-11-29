@@ -67,7 +67,6 @@
 	  height: 100vh;
 	  width: 100vw;
 	  position: relative;
-	  touch-action: pan-x pan-y; /* Allow Three.js controls but block system pinch-zoom */
 	}
 
 	/* Starfield Canvas */
@@ -104,7 +103,6 @@
 	  width: 100%;
 	  height: 100%;
 	  z-index: 1;
-	  touch-action: none; /* Let Three.js handle all touch, block system zoom */
 	}
 
 	/* --- The 3D Card --- */
@@ -732,11 +730,6 @@
 	      window._cardClickStart = null;
 	    }
 	  });
-	  
-	  // Prevent system-level pinch zoom on entire page (Safari gesture events)
-	  document.addEventListener('gesturestart', (e) => e.preventDefault());
-	  document.addEventListener('gesturechange', (e) => e.preventDefault());
-	  document.addEventListener('gestureend', (e) => e.preventDefault());
 	}
 
 	// --- LIGHTBOX FUNCTIONS ---
