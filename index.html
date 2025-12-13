@@ -120,23 +120,25 @@
 	  position: absolute;
 	  transform-style: preserve-3d;
 	  
-	  /* REMOVE border-radius and overflow:hidden to fix Chrome Lag */
-	  /* border-radius: 18px; */ 
-	  /* overflow: hidden; */
+	  /* CHANGE 1: Use a SOLID color. 
+		 Do NOT use rgba(255,255,255, 0.02) - that causes the flicker.
+		 Using #050505 matches your page background, making it look clean. */
+	  background: #050505; 
 	  
-	  /* Use a simple background color instead of complex transparency if possible */
-	  background: rgba(20, 20, 20, 0.9); 
+	  /* Keep the border simple */
 	  border: 1px solid rgba(148, 163, 184, 0.5);
 	  
-	  /* ZERO BLUR SHADOW for performance */
-	  /* We use a sharp shadow which is infinitely cheaper for the GPU */
+	  /* Keep the performance shadow */
 	  box-shadow: 0 10px 0px rgba(0, 0, 0, 0.5); 
 	  
 	  transition: transform 0.25s ease, border-color 0.25s ease;
 	  cursor: grab;
 	  pointer-events: auto;
 	  
-	  /* Force GPU layer promotion */
+	  /* CHANGE 2: Let the back be seen! */
+	  backface-visibility: visible;
+	  
+	  /* Keep this for performance */
 	  will-change: transform;
 	}
 	
