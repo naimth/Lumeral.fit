@@ -324,7 +324,6 @@
 	<div class="button-group">
 	  <button id="table">Curve</button>
 	  <button id="sphere">Sphere</button>
-	  <button id="explode">Explode</button>
 	  <button id="helix">Helix</button>
 	  <button id="grid">Grid</button>
 	</div>
@@ -531,7 +530,7 @@
 	let camera, scene, renderer, controls;
 	let sceneGroup;
 	const objects = [];
-	const targets = { table: [], sphere: [], helix: [], grid: [], explode: [] };
+	const targets = { table: [], sphere: [], helix: [], grid: [] };
 	
 	let skipNextControlsUpdate = false;
 	let initialSpinVelocity = 0;
@@ -687,24 +686,6 @@
 		  }
 		}
 
-	  // 5. EXPLODE (Random positions in a cube, all photos facing forward)
-	  {
-		for (let i = 0; i < objects.length; i++) {
-		  const object = new THREE.Object3D();
-		  const cubeSize = 2000; // Similar scale to other layouts
-		  
-		  // Random position within a cube
-		  object.position.x = Math.random() * cubeSize - cubeSize / 2;
-		  object.position.y = Math.random() * cubeSize - cubeSize / 2;
-		  object.position.z = Math.random() * cubeSize - cubeSize / 2;
-		  
-		  // All photos face the same direction (rotation stays at 0,0,0)
-		  // No lookAt needed - they all face the camera direction
-		  
-		  targets.explode.push(object);
-		}
-	  }
-
 	  // --- RENDERER ---
 	  renderer = new THREE.CSS3DRenderer();
 	  renderer.setSize(window.innerWidth, window.innerHeight);
@@ -730,28 +711,13 @@
 	  // Buttons
 	  const buttonTable = document.getElementById('table');
 	  const buttonSphere = document.getElementById('sphere');
-	  const buttonExplode = document.getElementById('explode');
 	  const buttonHelix = document.getElementById('helix');
 	  const buttonGrid = document.getElementById('grid');
 
-	  buttonTable.addEventListener('click', function () { shuffleArray(targets.table); transform(targets.table, 2000); setActive(this); });
-	  buttonSphere.addEventListener('click', function () { shuffleArray(targets.sphere); transform(targets.sphere, 2000); setActive(this); });
-	  buttonExplode.addEventListener('click', function () { 
-		// Regenerate random positions each time for a fresh explosion
-		targets.explode = [];
-		const cubeSize = 2000;
-		for (let i = 0; i < objects.length; i++) {
-		  const object = new THREE.Object3D();
-		  object.position.x = Math.random() * cubeSize - cubeSize / 2;
-		  object.position.y = Math.random() * cubeSize - cubeSize / 2;
-		  object.position.z = Math.random() * cubeSize - cubeSize / 2;
-		  targets.explode.push(object);
-		}
-		transform(targets.explode, 2000); 
-		setActive(this); 
-	  });
-	  buttonHelix.addEventListener('click', function () { shuffleArray(targets.helix); transform(targets.helix, 2000); setActive(this); });
-	  buttonGrid.addEventListener('click', function () { shuffleArray(targets.grid); transform(targets.grid, 2000); setActive(this); });
+	  buttonTable.addEventListener('click', function () { transform(targets.table, 2000); setActive(this); });
+	  buttonSphere.addEventListener('click', function () { transform(targets.sphere, 2000); setActive(this); });
+	  buttonHelix.addEventListener('click', function () { transform(targets.helix, 2000); setActive(this); });
+	  buttonGrid.addEventListener('click', function () { transform(targets.grid, 2000); setActive(this); });
 
 	  // Start gentle spin immediately so scene rotates during assembly
 	  initialSpinVelocity = 0.095;
