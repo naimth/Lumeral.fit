@@ -43,8 +43,8 @@
   
   <style>
 	:root {
-	  --card-width: 200px;
-	  --card-height: 250px; /* 4:5 aspect ratio */
+	  --card-width: 400px;
+	  --card-height: 500px; /* 4:5 aspect ratio */
 	  --glow-color: #7dd3fc; /* Light blue glow */
 	  --bg-dark: #050505;
 	}
@@ -67,15 +67,16 @@
 	  height: 100vh;
 	  width: 100vw;
 	  position: relative;
-	  touch-action: none;       /* crucial for chrome/android */
+	/*   touch-action: none;       crucial for chrome/android */
 	  overscroll-behavior: none; /* prevents rubber-banding on mac/ios */
 	}
 	
-	/* Block system zoom on all elements */
+	/* Block system zoom on all elements 
 	* {
 	  touch-action: none;
 	}
-
+	*/
+	
 	/* Starfield Canvas */
 	#starfield {
 	  position: fixed;
@@ -120,16 +121,18 @@
 	  position: absolute;
 	  transform-style: preserve-3d;
 	  
+	   overflow: hidden;
+	  
 	  /* CHANGE 1: Use a SOLID color. 
 		 Do NOT use rgba(255,255,255, 0.02) - that causes the flicker.
-		 Using #050505 matches your page background, making it look clean. */
-	  background: #050505; 
+		 Using #050505 matches your page background, making it look clean. 
+	  background: #050505; */
 	  
 	  /* Keep the border simple */
 	  border: 1px solid rgba(148, 163, 184, 0.5);
 	  
-	  /* Keep the performance shadow */
-	  box-shadow: 0 10px 0px rgba(0, 0, 0, 0.5); 
+	  /* Keep the performance shadow 
+	  box-shadow: 0 10px 0px rgba(0, 0, 0, 0.5); */
 	  
 	  transition: transform 0.25s ease, border-color 0.25s ease;
 	  cursor: grab;
@@ -162,8 +165,14 @@
 	.card-image {
 	  width: 100%;
 	  height: 100%;
-	  object-fit: cover;
-	  display: block;
+	  object-fit: cover; /* Ensures photo fills the card perfectly */
+	  display: block;    /* FIXES THE "DARK EXTENSION" GAP at the bottom */
+	  
+	  /* FIXES THE FLICKER 
+	  /* This pushes the photo 1 pixel forward in 3D space so it sits 
+		 physically "on top" of the background color. No more Z-fighting. 
+	  transform: translateZ(1px); */
+	  
 	  pointer-events: none;
 	}
 
@@ -217,7 +226,7 @@
 	.button-group {
 	  display: inline-flex;
 	  background: rgba(20, 20, 20, 0.8);
-	  backdrop-filter: blur(10px);
+	  /* backdrop-filter: blur(10px); */
 	  padding: 6px;
 	  border-radius: 50px;
 	  border: 1px solid rgba(255, 255, 255, 0.1);
@@ -271,7 +280,7 @@
 	  border-radius: 8px;
 	  padding: 8px;
 	  background: rgba(20, 20, 20, 0.6);
-	  backdrop-filter: blur(10px);
+	 // backdrop-filter: blur(10px);
 	  border: 1px solid rgba(255, 255, 255, 0.1);
 	  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 	}
