@@ -113,48 +113,89 @@
 	  touch-action: none; /* Let Three.js handle all touch, block system zoom */
 	}
 
-/* --- The 3D Card --- */
+	/* --- The 3D Card --- */
 	.element-card {
 	  width: var(--card-width);
 	  height: var(--card-height);
 	  position: absolute;
 	  transform-style: preserve-3d;
 	  
-	  /* REMOVE border-radius and overflow:hidden to fix Chrome Lag */
-	  /* border-radius: 18px; */ 
-	  /* overflow: hidden; */
+	  /* Base State with rounded corners and subtle blue glow */
+	  border-radius: 18px;
+	  overflow: hidden;
+	  background: rgba(255, 255, 255, 0.02);
+	  border: 1px solid rgba(148, 163, 184, 0.7);
+	  box-shadow: 
+		0 10px 20px rgba(0, 0, 0, 0.8),
+		0 0 10px rgba(56, 189, 248, 0.5);
 	  
-	  /* Use a simple background color instead of complex transparency if possible */
-	  background: rgba(20, 20, 20, 0.9); 
-	  border: 1px solid rgba(148, 163, 184, 0.5);
-	  
-	  /* ZERO BLUR SHADOW for performance */
-	  /* We use a sharp shadow which is infinitely cheaper for the GPU */
-	  box-shadow: 0 10px 0px rgba(0, 0, 0, 0.5); 
-	  
-	  transition: transform 0.25s ease, border-color 0.25s ease;
+	  transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
 	  cursor: grab;
+	  
 	  pointer-events: auto;
 	  
-	  /* Force GPU layer promotion */
-	  will-change: transform;
+	  /* OPTIMIZATION 2: Hardware Acceleration Hints 
+		/* This tells Chrome to keep these on the GPU and not repaint them constantly 
+		backface-visibility: hidden;
+		will-change: transform;
+		transform: translateZ(0);
+		*/
 	}
 	
-	/* DELETE THE ::before BLOCK ENTIRELY */
-	/* .element-card::before { ... } */
+	/* Subtle blue glow overlay on cards 
+	.element-card::before {
+	  content: "";
+	  position: absolute;
+	  inset: -2px;
+	  border-radius: inherit;
+	  background: radial-gradient(circle at top, rgba(56, 189, 248, 0.16), rgba(15, 23, 42, 0.95));
+	  mix-blend-mode: screen;
+	  opacity: 0.85;
+	  pointer-events: none;
+	}
+	*/
+	
+	/* Subtle blue glow overlay on cards (EDGE-ONLY; does not tint the photo) */
+	.element-card::before {
+	  content: "";
+	  position: absolute;
+	  inset: 0;
+	  border-radius: inherit;
+	  pointer-events: none;
+	
+	  /* Transparent layer with only shadows => keeps the face/tones unchanged */
+	  box-shadow:
+		inset 0 0 0 2px rgba(125, 211, 252, 0.35),
+		inset 0 0 36px rgba(56, 189, 248, 0.10);
+	}
+
 	
 	.element-card:active {
 	  cursor: grabbing;
 	}
-	
+
+	/* Hover State - Keep your existing cool glowing border 
 	.element-card:hover {
-	  /* Simple solid border glow - NO BLUR */
-	  border: 2px solid rgba(125, 211, 252, 1);
-	  box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.3);
-	  z-index: 100; /* Attempt to bring to front */
+	  box-shadow:
+		0 0 0 3px rgba(125, 211, 252, 0.8),
+		0 0 12px rgba(125, 211, 252, 0.5),
+		0 0 24px rgba(125, 211, 252, 0.35),
+		0 0 400px rgba(125, 211, 252, 0.4),
+		inset 0 0 16px rgba(125, 211, 252, 0.1);
+	  border-color: rgba(125, 211, 252, 0.8);
 	}
+	*/
 	
-	
+	/* Hover State */
+	.element-card:hover {
+	  /* OPTIMIZATION 3: Removed the 400px blur radius */
+	  /* We keep the glow but keep the radius tighter (max 30px) to prevent lag */
+	  box-shadow:
+		0 0 0 3px rgba(125, 211, 252, 0.8),
+		0 0 20px rgba(125, 211, 252, 0.6),
+		inset 0 0 16px rgba(125, 211, 252, 0.1);
+	  border-color: rgba(125, 211, 252, 0.8);
+	}
 
 	/* Image area */
 	.card-image {
