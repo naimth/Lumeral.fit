@@ -121,7 +121,7 @@
 	  position: absolute;
 	  transform-style: preserve-3d;
 	  
-	 /*  overflow: hidden; */
+	   overflow: hidden; 
 	  
 	  /* CHANGE 1: Use a SOLID color. 
 		 Do NOT use rgba(255,255,255, 0.02) - that causes the flicker.
@@ -141,8 +141,8 @@
 	  /* CHANGE 2: Let the back be seen! */
 	  backface-visibility: visible;
 	  
-	  /* Keep this for performance */
-	  will-change: transform;
+	  /* Keep this for performance 
+	  will-change: transform;  */
 	}
 	
 	/* DELETE THE ::before BLOCK ENTIRELY */
@@ -575,7 +575,7 @@
 		const img = document.createElement('img');
 		img.className = 'card-image';
 		img.src = urls.thumbnail;
-		img.loading = "eager"; 
+		img.loading = "lazy"; 
 		element.appendChild(img);
 
 		// --- INTERACTION LOGIC (Click vs Drag) ---
