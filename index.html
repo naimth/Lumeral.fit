@@ -134,11 +134,12 @@
 	  
 	  pointer-events: auto;
 	  
-	  /* OPTIMIZATION 2: Hardware Acceleration Hints */
-		/* This tells Chrome to keep these on the GPU and not repaint them constantly */
+	  /* OPTIMIZATION 2: Hardware Acceleration Hints 
+		/* This tells Chrome to keep these on the GPU and not repaint them constantly 
 		backface-visibility: hidden;
 		will-change: transform;
 		transform: translateZ(0);
+		*/
 	}
 	
 	/* Subtle blue glow overlay on cards 
@@ -804,7 +805,8 @@
 		  if (e.touches.length > 1) e.preventDefault();
 		}, { passive: false });
 	  }
-
+  }
+	
 
 	// --- LIGHTBOX FUNCTIONS ---
 	function openLightbox(fullsizeUrl) {
